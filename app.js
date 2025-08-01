@@ -1,4 +1,4 @@
-// === IndexedDB Todo App with File Attachments === //
+// === IndexedDB Todo App with File Attachments and Simple Done Filter === //
 
 // Elements
 const fileInput = document.getElementById("attachment");
@@ -7,12 +7,15 @@ const fileList = document.getElementById("confirmed-files");
 const form = document.getElementById("todo-form");
 const todoContainer = document.getElementById("todo-list-container");
 const submitBtn = document.getElementById("submit-btn");
+const toggleDoneBtn = document.getElementById("toggle-done-btn");
+const clearDoneBtn = document.getElementById("clear-done-btn");
 
 // State
 let selectedFiles = [];
 let editingId = null;
 let todos = [];
 let db;
+let showOnlyDone = false;
 
 // === IndexedDB Setup === //
 function openDB() {
@@ -157,7 +160,10 @@ async function validateAndSubmitTodo() {
 // === Render Todos === //
 function renderTodoTable() {
   todoContainer.innerHTML = "";
-  todos.forEach((todo) => {
+
+  let filteredTodos = showOnlyDone ? todos.filter(t => t.done) : todos;
+
+  filteredTodos.forEach((todo) => {
     const card = document.createElement("div");
     card.className = "border rounded p-3 mb-3";
 
@@ -233,6 +239,13 @@ function toggleDone(id) {
   renderTodoTable();
 }
 
+function clearDoneTasks() {
+  const doneTasks = todos.filter(t => t.done);
+  doneTasks.forEach(task => deleteTodoFromDB(task.id));
+  todos = todos.filter(t => !t.done);
+  renderTodoTable();
+}
+
 // === Form Reset === //
 function resetTodoForm() {
   form.reset();
@@ -250,6 +263,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   await openDB();
   todos = await loadTodosFromDB();
   renderTodoTable();
+
+  toggleDoneBtn.addEventListener("click", () => {
+    showOnlyDone = !showOnlyDone;
+    toggleDoneBtn.textContent = showOnlyDone ? "Show All" : "Show Done";
+    renderTodoTable();
+  });
+
+  clearDoneBtn.addEventListener("click", () => {
+    if (confirm("Are you sure you want to delete all done tasks?")) {
+      clearDoneTasks();
+    }
+  });
 });
 
 form.addEventListener("submit", function (e) {
